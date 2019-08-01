@@ -1,5 +1,5 @@
 import md5 from 'js-md5'
-import fetch from './fetch'
+import axios from 'axios'
 // 分片上传
 /*
 * 分片上传函数 支持多个文件
@@ -31,9 +31,11 @@ export const sliceUpload = ({files, chunkUrl, fileUrl, pieceSize = 5, progress, 
       fileRederInstance.readAsBinaryString(file)
       fileRederInstance.addEventListener('load', e => {
         let fileBolb = e.target.result
-        console.log('开始计算文件' + file.name + '的md5,时间：' + Date.now());
+        var start  = Date.now();
+        console.log('开始计算文件' + file.name + '的md5,时间：' + start);
         let fileMD5 = md5(fileBolb)
         console.log('结束计算文件' + file.name + '的md5,时间：' + Date.now());
+        console.log('结束计算文件' + file.name + '的md5,时间：' + (Date.now() - start));
         if (!fileList.some((arr) => arr.md5 === fileMD5)) {
           fileList.push({md5: fileMD5, name: file.name, file})
           AllFileSize = AllFileSize + file.size
@@ -102,12 +104,10 @@ export const sliceUpload = ({files, chunkUrl, fileUrl, pieceSize = 5, progress, 
     fetchForm.append('data', chunkInfo.chunk)
     fetchForm.append('chunks', chunkInfo.chunkCount)
     fetchForm.append('chunk_index', chunkInfo.currentChunk)
-    fetchForm.append('chunk_md5', chunkInfo.chunkMD5)
-    fetch({
-      type: 'post',
-      url: chunkUrl,
-      data: fetchForm
-    }).then(res => {
+    fetchForm.append('chunk_md5', chunkInfo.chunkMD5);
+
+    axios.post(chunkUrl,fetchForm)
+    .then(res => {
       progressFun()
       // currentAllChunk++
       if (chunkInfo.currentChunk < chunkInfo.chunkCount - 1) {
